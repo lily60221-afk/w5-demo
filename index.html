@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8">
+    <title>五子棋對戰</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #f0f0f0;
+            font-family: sans-serif;
+        }
+
+        canvas {
+            background: #e3c08d;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .status {
+            margin-top: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        button {
+            margin-top: 15px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="status" id="status">黑棋行動</div>
+    <canvas id="chess" width="450" height="450"></canvas>
+    <button onclick="resetGame()">重新開始</button>
+
+    <script>
+        const canvas = document.getElementById('chess');
+        const ctx = canvas.getContext('2d');
+        const statusTxt = document.getElementById('status');
+        let chessBoard = [];
+        let me = true; // true: 黑棋, false: 白棋
+        let over = false;
+
+        // 初始化棋盤資料 (15x15)
+        function initData() {
+            for (let i = 0; i < 15; i++) {
+                chessBoard[i] = [];
+                for (let j = 0; j < 15; j++) {
+                    chessBoard[i][j] = 0;
+                }
+            }
+        }
+
+        // 繪製棋盤線條
+        function drawChessBoard() {
+            ctx.strokeStyle = "#555";
+            for (let i = 0; i < 15; i++) {
+                ctx.moveTo(15 + i * 30, 15);
+                ctx.lineTo(15 + i * 30, 435);
+                ctx.stroke();
+                ctx.moveTo(15, 15 + i * 30);
+                ctx.lineTo(435, 15 + i * 30);
+                ctx.stroke();
+            }
+        }
+
+        // 落子繪製
+        function oneStep(i, j, me) {
+            ctx.beginPath();
+            ctx.arc(15 + i * 30, 15 + j * 30, 13, 0, 2 * Math.PI);
+            ctx.closePath();
+            let gradient = ctx.createRadialGradient(15 + i * 30 + 2, 15 + j * 30 - 2, 13, 15 + i * 30 + 2, 15 + j * 30 - 2, 0);
+            if (me) {
+                gradient.addColorStop(0, "#0A0A0A");
+                gradient.addColorStop(1, "#636766");
+            } else {
+                gradient.addColorStop(0, "#D1D1D1");
+                gradient.addColorStop(1, "#F9F9F9");
+            }
+            ctx.fillStyle = gradient;
+            ctx.fill();
+        }
+
+        canvas.onclick = function (e) {
+            if (over) return;
+            let x = e.offsetX;
+            let y = e.offsetY;
+            let i = Math.floor(x / 30);
+            let j = Math.floor(y / 30);
+
+            if (chessBoard[i][j] === 0) {
+                oneStep(i, j, me);
+                chessBoard[i][j] = me ? 1 : 2;
+
+                if (checkWin(i, j, chessBoard[i][j])) {
+                    statusTxt.innerText = (me ? "黑棋" : "白棋") + " 獲勝！🎉";
+                    over = true;
+                } else {
+                    me = !me;
+                    statusTxt.innerText = me ? "黑棋行動" : "白棋行動";
+                }
+            }
+        };
+
+        function checkWin(x, y, color) {
+            const directions = [[1, 0], [0, 1], [1, 1], [1, -1]];
+            for (let [dx, dy] of directions) {
+                let count = 1;
+                // 正向檢查
+                let tx = x + dx, ty = y + dy;
+                while (tx >= 0 && tx < 15 && ty >= 0 && ty < 15 && chessBoard[tx][ty] === color) {
+                    count++; tx += dx; ty += dy;
+                }
+                // 反向檢查
+                tx = x - dx; ty = y - dy;
+                while (tx >= 0 && tx < 15 && ty >= 0 && ty < 15 && chessBoard[tx][ty] === color) {
+                    count++; tx -= dx; ty -= dy;
+                }
+                if (count >= 5) return true;
+            }
+            return false;
+        }
+
+        function resetGame() {
+            ctx.clearRect(0, 0, 450, 450);
+            over = false;
+            me = true;
+            statusTxt.innerText = "黑棋行動";
+            initData();
+            drawChessBoard();
+        }
+
+        initData();
+        drawChessBoard();
+    </script>
+</body>
+
+</html>
